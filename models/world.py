@@ -80,35 +80,39 @@ class World:
         self.simulation_ticks += 1
         self._notify_observers()
         
-    def get_statistics(self) -> dict:
-        """
-        Get current world statistics.
-        
-        Returns:
-            Dictionary containing current statistics
-        """
-        land_count = sum(
-            1 for row in self.grid 
-            for tile in row 
-            if isinstance(tile, LandTile)
-        )
-        water_count = sum(
-            1 for row in self.grid 
-            for tile in row 
-            if isinstance(tile, WaterTile)
-        )
-        
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get world statistics."""
+        if not self.terrain:
+            return {
+                'plant_count': 0,
+                'land_tiles': 0,
+                'water_tiles': 0,
+                'avg_fertility': 0.0
+            }
+
+        land_count = sum(1 for tile in self.terrain.tiles.values() 
+                         if tile.terrain_type == TerrainType.LAND)
+        water_count = len(self.terrain.tiles) - land_count
+
+        avg_fertility = sum(tile.fertility for tile in self.terrain.tiles.values() 
+                           if tile.terrain_type == TerrainType.LAND) / max(land_count, 1)
+
         return {
+            'plant_count': len(self.plants),
             'land_tiles': land_count,
             'water_tiles': water_count,
-            'plant_count': len(self.plants),
-            'max_plants': config.MAX_PLANTS,
-            'simulation_ticks': self.simulation_ticks
+            'avg_fertility': avg_fertility
         }
         
     def attach_observer(self, observer: 'SimulationObserver') -> None:
         """Attach an observer to receive state change notifications."""
         self._observers.append(observer)
+        
+    def clear(self) -> None:
+        """Clear all world state."""
+        self.plants.clear()
+        self.terrain = None
+        self._notify_observers()
     
     def _notify_observers(self) -> None:
         """Notify all observers of state change."""

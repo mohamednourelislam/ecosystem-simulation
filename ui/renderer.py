@@ -28,6 +28,17 @@ class Renderer:
         self.tile_rectangles = {}  # Cache tile rectangle IDs
         self.plant_ovals = {}  # Cache plant oval IDs
         
+    def render_initial_blank(self) -> None:
+        """Render blank initial state."""
+        self.canvas.delete('all')
+        self.canvas.create_text(
+            config.CANVAS_WIDTH // 2,
+            config.CANVAS_HEIGHT // 2,
+            text="Configure parameters and click Start",
+            font=('Arial', 16),
+            fill='#999999'
+        )
+        
     def render_terrain(self, grid: List[List[Tile]]) -> None:
         """
         Render the terrain grid.

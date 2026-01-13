@@ -1,6 +1,6 @@
 """
 Main application - orchestrates all components.
-Implements MVC controller pattern.
+Implements MVC controller pattern with interactive controls.
 """
 
 import tkinter as tk
@@ -9,14 +9,14 @@ from services.terrain_generator import TerrainGeneratorFactory
 from services.plant_spawner import PlantSpawner
 from strategies.spawn_probability import FertilityBasedStrategy
 from ui.renderer import Renderer
-from ui.statistics_panel import StatisticsPanel
+from ui.control_panel import ControlPanel
 import config
 
 
 class SimulationApp:
     """
     Main application controller.
-    Orchestrates simulation loop, coordinates components.
+    Orchestrates simulation loop, coordinates components with interactive controls.
     """
     
     def __init__(self, root: tk.Tk):
@@ -27,29 +27,28 @@ class SimulationApp:
             root: Tkinter root window
         """
         self.root = root
-        self.root.title("2D Ecosystem Simulation - Fertility-Based")
+        self.root.title("2D Ecosystem Simulation - Interactive")
         self.root.geometry(f"{config.WINDOW_WIDTH}x{config.WINDOW_HEIGHT}")
         self.root.resizable(False, False)
         
-        # Initialize model
-        self.world = World()
+        # Simulation state
+        self.running = False
+        self.initialized = False
+        self.update_job = None
+        self.spawn_job = None
+        self.tick_count = 0
         
-        # Initialize services with dependency injection
-        # Using fertility-based strategy for realistic vegetation patterns
-        self.terrain_generator = TerrainGeneratorFactory(config.TERRAIN_SEED)
-        spawn_strategy = FertilityBasedStrategy()
-        self.plant_spawner = PlantSpawner(spawn_strategy)
+        # Configuration (will be set from UI)
+        self.current_config = None
+        
+        # Components (initialized later)
+        self.world = None
+        self.terrain_generator = None
+        self.plant_spawner = None
+        self.renderer = None
         
         # Setup UI
         self._setup_ui()
-        
-        # Generate initial world state
-        self._initialize_world()
-        
-        # Start simulation loop
-        self.running = True
-        self._schedule_update()
-        self._schedule_plant_spawn()
     
     def _setup_ui(self) -> None:
         """Setup the user interface components."""
@@ -67,75 +66,174 @@ class SimulationApp:
         )
         self.canvas.pack(side='left')
         
-        # Statistics panel (implements Observer)
-        self.stats_panel = StatisticsPanel(main_container)
-        self.stats_panel.pack(side='right', fill='y')
-        
-        # Attach observer to world
-        self.world.attach_observer(self.stats_panel)
+        # Control panel with callbacks
+        self.control_panel = ControlPanel(
+            main_container,
+            on_start=self._handle_start,
+            on_pause=self._handle_pause,
+            on_step=self._handle_step,
+            on_restart=self._handle_restart
+        )
+        self.control_panel.pack(side='right', fill='y')
         
         # Initialize renderer
         self.renderer = Renderer(self.canvas)
+        
+        # Show initial blank state
+        self.renderer.render_initial_blank()
     
-    def _initialize_world(self) -> None:
-        """Generate and render initial world state."""
-        # Generate terrain using factory (now includes fertility calculation)
+    def _handle_start(self) -> None:
+        """Handle start/resume action."""
+        if not self.initialized:
+            # First time initialization
+            self._initialize_simulation()
+            self.initialized = True
+        
+        self.running = True
+        self._schedule_update()
+        self._schedule_plant_spawn()
+    
+    def _handle_pause(self) -> None:
+        """Handle pause action."""
+        self.running = False
+        self._cancel_scheduled_jobs()
+    
+    def _handle_step(self) -> None:
+        """Handle single step action (when paused)."""
+        if self.initialized and not self.running:
+            self._update()
+            self._try_spawn_plant()
+    
+    def _handle_restart(self) -> None:
+        """Handle restart action - reset entire simulation."""
+        self.running = False
+        self.initialized = False
+        self.tick_count = 0
+        
+        self._cancel_scheduled_jobs()
+        
+        # Clear world
+        if self.world:
+            self.world.clear()
+        
+        # Clear renderer
+        self.renderer.clear()
+        self.renderer.render_initial_blank()
+        
+        # Reset statistics
+        self.control_panel.update_statistics({
+            'plant_count': 0,
+            'land_tiles': 0,
+            'water_tiles': 0,
+            'avg_fertility': 0.0,
+            'sim_time': 0
+        })
+    
+    def _initialize_simulation(self) -> None:
+        """Initialize simulation with current configuration."""
+        # Get configuration from UI
+        self.current_config = self.control_panel.get_configuration()
+        
+        # Initialize model
+        self.world = World(max_plants=self.current_config['max_plants'])
+        
+        # Initialize services with configured parameters
+        self.terrain_generator = TerrainGeneratorFactory(
+            seed=int(self.current_config['terrain_seed'])
+        )
+        
+        spawn_strategy = FertilityBasedStrategy(
+            base_probability=self.current_config['base_spawn_probability'],
+            fertility_multiplier=self.current_config['fertility_spawn_multiplier']
+        )
+        self.plant_spawner = PlantSpawner(spawn_strategy)
+        
+        # Generate terrain with configured parameters
         terrain = self.terrain_generator.generate_terrain(
             config.GRID_WIDTH,
-            config.GRID_HEIGHT
+            config.GRID_HEIGHT,
+            sea_level=self.current_config['sea_level'],
+            fertility_max_distance=int(self.current_config['fertility_max_distance']),
+            fertility_falloff_rate=self.current_config['fertility_falloff_rate']
         )
         self.world.set_terrain(terrain)
-    
-        # Render static terrain (now shows fertility gradient)
+        
+        # Render terrain
         self.renderer.render_terrain(terrain)
-
+        
+        # Update initial statistics
+        self._update_statistics()
+    
     def _update(self) -> None:
-        """
-        Main simulation update tick.
-        Updates world state and renders changes.
-        """
-        if not self.running:
+        """Main simulation update tick."""
+        if not self.running or not self.initialized:
             return
-
+        
         # Update simulation state
         self.world.update()
-
+        self.tick_count += 1
+        
         # Render dynamic elements
         self.renderer.render_plants(self.world.plants)
-
+        
+        # Update statistics periodically
+        if self.tick_count % 10 == 0:
+            self._update_statistics()
+        
         # Schedule next update
         self._schedule_update()
-
+    
     def _try_spawn_plant(self) -> None:
-        """
-        Attempt to spawn a plant.
-        Runs on separate timer from main update.
-        """
-        if not self.running:
+        """Attempt to spawn a plant."""
+        if not self.running or not self.initialized:
             return
-
+        
         self.plant_spawner.attempt_spawn(self.world)
-
+        
         # Schedule next spawn attempt
         self._schedule_plant_spawn()
-
+    
+    def _update_statistics(self) -> None:
+        """Update statistics display."""
+        if not self.world:
+            return
+        
+        stats = self.world.get_statistics()
+        stats['sim_time'] = self.tick_count * config.UPDATE_INTERVAL // 1000  # seconds
+        
+        self.control_panel.update_statistics(stats)
+    
     def _schedule_update(self) -> None:
         """Schedule next simulation update."""
-        self.root.after(config.UPDATE_INTERVAL, self._update)
-
+        if self.running:
+            self.update_job = self.root.after(config.UPDATE_INTERVAL, self._update)
+    
     def _schedule_plant_spawn(self) -> None:
         """Schedule next plant spawn attempt."""
-        self.root.after(config.PLANT_SPAWN_INTERVAL, self._try_spawn_plant)
-
+        if self.running and self.current_config:
+            interval = int(self.current_config['plant_spawn_interval'])
+            self.spawn_job = self.root.after(interval, self._try_spawn_plant)
+    
+    def _cancel_scheduled_jobs(self) -> None:
+        """Cancel all scheduled jobs."""
+        if self.update_job:
+            self.root.after_cancel(self.update_job)
+            self.update_job = None
+        if self.spawn_job:
+            self.root.after_cancel(self.spawn_job)
+            self.spawn_job = None
+    
     def run(self) -> None:
         """Start the application main loop."""
         self.root.mainloop()
-        
+
+
 def main():
     """Application entry point."""
     root = tk.Tk()
     app = SimulationApp(root)
     app.run()
-    
+
+
 if __name__ == '__main__':
     main()

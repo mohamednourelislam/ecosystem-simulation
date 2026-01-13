@@ -15,22 +15,21 @@ TILE_SIZE = 10  # Size of each tile in pixels (100x100 grid)
 GRID_WIDTH = CANVAS_WIDTH // TILE_SIZE
 GRID_HEIGHT = CANVAS_HEIGHT // TILE_SIZE
 
-# Terrain generation
-TERRAIN_SEED = 42  # For reproducible terrain
-WATER_THRESHOLD = 0.35  # Proportion of noise that becomes water (legacy)
-SEA_LEVEL = 0.35  # Height threshold: below = water, above = land
+# Terrain generation - DEFAULT VALUES (can be changed in UI)
+DEFAULT_TERRAIN_SEED = 42  # For reproducible terrain
+DEFAULT_SEA_LEVEL = 0.35  # Height threshold: below = water, above = land
 
-# Fertility system
-FERTILITY_MAX_DISTANCE = 15  # Max distance for fertility calculation
-FERTILITY_FALLOFF_RATE = 0.08  # How quickly fertility decreases with distance
+# Fertility system - DEFAULT VALUES
+DEFAULT_FERTILITY_MAX_DISTANCE = 15  # Max distance for fertility calculation
+DEFAULT_FERTILITY_FALLOFF_RATE = 0.08  # How quickly fertility decreases with distance
 MIN_FERTILITY = 0.1  # Minimum fertility for far inland tiles
 MAX_FERTILITY = 1.0  # Maximum fertility at water's edge
 
-# Plant configuration
-MAX_PLANTS = 200
-PLANT_SPAWN_INTERVAL = 200  # milliseconds
-BASE_SPAWN_PROBABILITY = 0.08  # Base chance per eligible tile (reduced since fertility boosts it)
-FERTILITY_SPAWN_MULTIPLIER = 3.0  # How much fertility affects spawn rate
+# Plant configuration - DEFAULT VALUES
+DEFAULT_MAX_PLANTS = 200
+DEFAULT_PLANT_SPAWN_INTERVAL = 200  # milliseconds
+DEFAULT_BASE_SPAWN_PROBABILITY = 0.08  # Base chance per eligible tile
+DEFAULT_FERTILITY_SPAWN_MULTIPLIER = 3.0  # How much fertility affects spawn rate
 
 # Visual settings - Fertility gradient (light inland -> dark near water)
 FERTILITY_COLORS = {
@@ -46,9 +45,13 @@ FERTILITY_COLORS = {
 COLORS = {
     'water': '#1E90FF',
     'land': '#8B7355',  # Legacy fallback
-    'plant': '#0A3D0F',  # Very dark, rich forest green (darker than any land)
+    'plant': '#0A3D0F',  # Very dark, rich forest green
     'background': '#F0F0F0',
-    'sidebar_bg': '#E0E0E0'
+    'sidebar_bg': '#E0E0E0',
+    'button_bg': '#4CAF50',
+    'button_fg': '#FFFFFF',
+    'button_pause': '#FF9800',
+    'button_stop': '#F44336'
 }
 
 # Simulation timing
