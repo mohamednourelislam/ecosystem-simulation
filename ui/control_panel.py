@@ -128,6 +128,15 @@ class ControlPanel(tk.Frame):
                                config.DEFAULT_FERTILITY_SPAWN_MULTIPLIER, 
                                resolution=0.1)
         
+        # Creature Section
+        self._add_section_header(scrollable_frame, "Creature Settings")
+        self._add_config_slider(scrollable_frame, "Max Creatures", 
+                               "max_creatures", 10, 100, 
+                               config.DEFAULT_MAX_CREATURES)
+        self._add_config_slider(scrollable_frame, "Initial Creatures", 
+                               "initial_creatures", 2, 30, 
+                           config.DEFAULT_INITIAL_CREATURES)
+        
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
     
@@ -215,6 +224,11 @@ class ControlPanel(tk.Frame):
         
         stats = [
             ('Plants', 'plant_count'),
+            ('Creatures', 'creature_count'),
+            ('Males', 'male_count'),
+            ('Females', 'female_count'),
+            ('Newborns', 'newborn_count'),
+            ('Adults', 'adult_count'),
             ('Land Tiles', 'land_tiles'),
             ('Water Tiles', 'water_tiles'),
             ('Avg Fertility', 'avg_fertility'),

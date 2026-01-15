@@ -1,6 +1,5 @@
 """
 Configuration constants for the ecosystem simulation.
-Centralizes all magic numbers for easy adjustment.
 """
 
 # Window and canvas dimensions
@@ -11,41 +10,50 @@ CANVAS_HEIGHT = 1000
 SIDEBAR_WIDTH = 300
 
 # Grid configuration
-TILE_SIZE = 10  # Size of each tile in pixels (100x100 grid)
+TILE_SIZE = 10
 GRID_WIDTH = CANVAS_WIDTH // TILE_SIZE
 GRID_HEIGHT = CANVAS_HEIGHT // TILE_SIZE
 
-# Terrain generation - DEFAULT VALUES (can be changed in UI)
-DEFAULT_TERRAIN_SEED = 42  # For reproducible terrain
-DEFAULT_SEA_LEVEL = 0.35  # Height threshold: below = water, above = land
+# Terrain generation
+DEFAULT_TERRAIN_SEED = 42
+DEFAULT_SEA_LEVEL = 0.35
 
-# Fertility system - DEFAULT VALUES
-DEFAULT_FERTILITY_MAX_DISTANCE = 15  # Max distance for fertility calculation
-DEFAULT_FERTILITY_FALLOFF_RATE = 0.08  # How quickly fertility decreases with distance
-MIN_FERTILITY = 0.1  # Minimum fertility for far inland tiles
-MAX_FERTILITY = 1.0  # Maximum fertility at water's edge
+# Fertility system
+DEFAULT_FERTILITY_MAX_DISTANCE = 15
+DEFAULT_FERTILITY_FALLOFF_RATE = 0.08
+MIN_FERTILITY = 0.1
+MAX_FERTILITY = 1.0
 
-# Plant configuration - DEFAULT VALUES
-DEFAULT_MAX_PLANTS = 200
-DEFAULT_PLANT_SPAWN_INTERVAL = 200  # milliseconds
-DEFAULT_BASE_SPAWN_PROBABILITY = 0.08  # Base chance per eligible tile
-DEFAULT_FERTILITY_SPAWN_MULTIPLIER = 3.0  # How much fertility affects spawn rate
+# Plant configuration
+DEFAULT_MAX_PLANTS = 300
+DEFAULT_PLANT_SPAWN_INTERVAL = 200
+DEFAULT_BASE_SPAWN_PROBABILITY = 0.08
+DEFAULT_FERTILITY_SPAWN_MULTIPLIER = 8.0  # Increased for better clustering
 
-# Visual settings - Fertility gradient (light inland -> dark near water)
+# Creature configuration - NEW
+DEFAULT_MAX_CREATURES = 50
+DEFAULT_INITIAL_CREATURES = 10
+DEFAULT_CREATURE_UPDATE_INTERVAL = 100  # ms between creature updates
+
+# Visual settings
 FERTILITY_COLORS = {
-    'infertile': '#C4A57B',  # Light tan/beige (dry, poor soil)
-    'low': '#A8956C',        # Light olive-brown
-    'medium_low': '#8B9D5C',  # Yellow-green
-    'medium': '#6B8E4D',     # Medium olive green
-    'medium_high': '#4A7C3E', # Rich green
-    'high': '#2D6B2F',       # Deep forest green
-    'very_high': '#1A5520',  # Very dark rich green
+    'infertile': '#C4A57B',
+    'low': '#A8956C',
+    'medium_low': '#8B9D5C',
+    'medium': '#6B8E4D',
+    'medium_high': '#4A7C3E',
+    'high': '#2D6B2F',
+    'very_high': '#1A5520',
 }
 
 COLORS = {
     'water': '#1E90FF',
-    'land': '#8B7355',  # Legacy fallback
-    'plant': '#0A3D0F',  # Very dark, rich forest green
+    'land': '#8B7355',
+    'plant': '#0A3D0F',
+    'creature_male_adult': '#0000FF',
+    'creature_female_adult': '#FF1493',
+    'creature_male_newborn': '#87CEEB',
+    'creature_female_newborn': '#FFB6C1',
     'background': '#F0F0F0',
     'sidebar_bg': '#E0E0E0',
     'button_bg': '#4CAF50',
@@ -55,4 +63,4 @@ COLORS = {
 }
 
 # Simulation timing
-UPDATE_INTERVAL = 100  # milliseconds between updates
+UPDATE_INTERVAL = 100
